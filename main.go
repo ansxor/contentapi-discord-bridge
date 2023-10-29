@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	bot "github.com/ansxor/contentapi-discord-bridge/bot"
 	"github.com/ansxor/contentapi-discord-bridge/contentapi"
@@ -38,6 +39,11 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 		panic(err)
 	}
 
+	// this is a flag to make sure that the program fails if the connection fails
+	// if we haven't connected before. this way we know whether to retry or not.
+	connectedBefore := false
+
+restart_connection:
 	connection, resp, err := dialer.Dial(fmt.Sprintf("wss://%s/api/live/ws?token=%s", contentapi_domain, contentapi_token), nil)
 
 	if err != nil {
@@ -50,16 +56,28 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 			}
 			fmt.Println("Body:", string(bodyBytes))
 		}
-		log.Fatal("Failed to connect to ContentAPI :/ ", err)
+		if connectedBefore {
+			log.Default().Println("Reconnection failed. Waiting 10 seconds before trying again: ", err)
+			time.Sleep(10 * time.Second)
+			goto restart_connection
+		}
+		log.Fatal("Cannot connect to ContentAPI. Is there an issue with configuration?: ", err)
 		panic(err)
 	}
 
 	defer connection.Close()
+	connectedBefore = true
+
+	log.Default().Println("Connected to ContentAPI")
 
 	for {
 		_, message, err := connection.ReadMessage()
 		if err != nil {
-			log.Default().Println("There was an error reading from the WebSocket:", err)
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Default().Println("WebSocket closed, reconnecting:", err)
+				goto restart_connection
+			}
+			log.Default().Println("There was an unexpected error reading from the WebSocket:", err)
 			continue
 		}
 
