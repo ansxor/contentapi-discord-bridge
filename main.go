@@ -85,12 +85,28 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 
 				for j := range channels {
 					channel := channels[j]
-					err := bot.WriteDiscordMessage(session, contentapi_domain, channel, event)
+					msg, err := bot.WriteDiscordMessage(session, contentapi_domain, channel, event)
 					if err != nil {
-						fmt.Println(err)
+						log.Default().Println(err)
+						continue
+					}
+
+					err = bot.StoreWebhookMessage(db, *msg)
+					if err != nil {
+						log.Default().Println("Failed storing webhook message:", err)
 						continue
 					}
 				}
+			}
+
+			if event.State == contentapi.MessageUpdated {
+				webhookMessages, err := bot.GetWebhookMessagesForContentApiMessage(db, event.Message.Id)
+				if err != nil {
+					log.Default().Println(err)
+					continue
+				}
+
+				bot.EditDiscordMessages(session, contentapi_domain, event, webhookMessages)
 			}
 		}
 	}
@@ -173,6 +189,11 @@ func main() {
 	}
 
 	err = bot.InitAvatarStore(db)
+	if err != nil {
+		panic(err)
+	}
+
+	err = bot.InitWebhookMessageStore(db)
 	if err != nil {
 		panic(err)
 	}

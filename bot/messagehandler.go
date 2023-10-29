@@ -43,10 +43,10 @@ func FindOrCreateWebhook(session *discordgo.Session, channelId string) (*discord
 	return newWebhook, nil
 }
 
-func WriteDiscordMessage(session *discordgo.Session, contentApiDomain string, channelId string, message contentapi.MessageEvent) error {
+func WriteDiscordMessage(session *discordgo.Session, contentApiDomain string, channelId string, message contentapi.MessageEvent) (*WebhookMessageData, error) {
 	webhook, err := FindOrCreateWebhook(session, channelId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	webhookMessage := &discordgo.WebhookParams{
@@ -55,9 +55,34 @@ func WriteDiscordMessage(session *discordgo.Session, contentApiDomain string, ch
 		Username:  message.User.Username,
 	}
 
-	_, err = session.WebhookExecute(webhook.ID, webhook.Token, true, webhookMessage)
+	msg, err := session.WebhookExecute(webhook.ID, webhook.Token, true, webhookMessage)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	return &WebhookMessageData{
+		WebhookId:               webhook.ID,
+		WebhookMessageChannelId: channelId,
+		WebhookMessageId:        msg.ID,
+		ContentApiMessageId:     message.Message.Id,
+	}, nil
+}
+
+func EditDiscordMessages(session *discordgo.Session, contentApiDomain string, message contentapi.MessageEvent, discordMessage []WebhookMessageData) error {
+	for _, webhookMessageData := range discordMessage {
+		webhookMessage := &discordgo.WebhookEdit{
+			Content: &message.Message.Text,
+		}
+
+		webhook, err := session.Webhook(webhookMessageData.WebhookId)
+		if err != nil {
+			return err
+		}
+
+		_, err = session.WebhookMessageEdit(webhook.ID, webhook.Token, webhookMessageData.WebhookMessageId, webhookMessage)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

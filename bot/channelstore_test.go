@@ -6,7 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestTableCreated(t *testing.T) {
+func TestChannelTableCreated(t *testing.T) {
 	db, teardown := SetupDbTest(t)
 	defer teardown(t)
 
