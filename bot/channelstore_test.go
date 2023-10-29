@@ -1,22 +1,16 @@
 package bot
 
 import (
-	"database/sql"
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestTableCreated(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitChannelStore(db)
+	err := InitChannelStore(db)
 
 	if err != nil {
 		t.Error(err)
@@ -30,15 +24,10 @@ func TestTableCreated(t *testing.T) {
 }
 
 func TestStoreChannelPair(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitChannelStore(db)
+	err := InitChannelStore(db)
 
 	if err != nil {
 		t.Error(err)
@@ -56,15 +45,10 @@ func TestStoreChannelPair(t *testing.T) {
 }
 
 func TestSequentialStoreChannelPair(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitChannelStore(db)
+	err := InitChannelStore(db)
 
 	if err != nil {
 		t.Error(err)
@@ -84,15 +68,10 @@ func TestSequentialStoreChannelPair(t *testing.T) {
 }
 
 func TestStoreGetDiscordChannelsFromContentApiRoomId(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitChannelStore(db)
+	err := InitChannelStore(db)
 
 	if err != nil {
 		t.Error(err)
@@ -123,15 +102,10 @@ func TestStoreGetDiscordChannelsFromContentApiRoomId(t *testing.T) {
 }
 
 func TestStoreGetContentApiRoomFromDiscord(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitChannelStore(db)
+	err := InitChannelStore(db)
 
 	if err != nil {
 		t.Error(err)

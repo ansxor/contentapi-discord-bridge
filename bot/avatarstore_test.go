@@ -1,20 +1,14 @@
 package bot
 
 import (
-	"database/sql"
 	"testing"
 )
 
 func TestAvatarTableCreated(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitAvatarStore(db)
+	err := InitAvatarStore(db)
 
 	if err != nil {
 		t.Error(err)
@@ -28,15 +22,10 @@ func TestAvatarTableCreated(t *testing.T) {
 }
 
 func TestGetAvatar(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitAvatarStore(db)
+	err := InitAvatarStore(db)
 
 	if err != nil {
 		t.Error(err)
@@ -60,15 +49,10 @@ func TestGetAvatar(t *testing.T) {
 }
 
 func TestAvatarIntegrity(t *testing.T) {
-	db, err := sql.Open("sqlite3", "file::memory:")
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
 
-	if err != nil {
-		t.Error(err)
-	}
-	db.SetMaxOpenConns(1)
-	defer db.Close()
-
-	err = InitAvatarStore(db)
+	err := InitAvatarStore(db)
 	if err != nil {
 		t.Error(err)
 	}
