@@ -236,7 +236,6 @@ func UploadFile(domain string, token string, bucket string, file io.Reader, file
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Println("hm?")
 		return "", err
 	}
 	defer res.Body.Close()
@@ -244,7 +243,6 @@ func UploadFile(domain string, token string, bucket string, file io.Reader, file
 	// Parsing the response
 	var content map[string]interface{}
 	if err := json.NewDecoder(res.Body).Decode(&content); err != nil {
-		fmt.Println("hm?")
 		return "", err
 	}
 

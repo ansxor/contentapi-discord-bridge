@@ -3,7 +3,6 @@ package bot
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -103,14 +102,11 @@ func FetchAvatarFromUser(db *sql.DB, domain string, token string, user *discordg
 		return nil, err
 	}
 
-	fmt.Println(hash)
-
 	_, err = db.Exec(`
 		INSERT OR REPLACE INTO avatar_store (discord_uid, discord_avatar_url, content_api_hash)
 		VALUES (?, ?, ?)
 	`, user.ID, user.Avatar, hash)
 	if err != nil {
-		fmt.Println("oh")
 		return nil, err
 	}
 

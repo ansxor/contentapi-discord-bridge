@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  contentapi-discord-bridge:
+    build: .
+    volumes:
+      - contentapi-bridge-db:/app/database
+    environment:
+      CONTENTAPI_DOMAIN: ""
+      CONTENTAPI_TOKEN: ""
+      DISCORD_TOKEN: ""
+      DB_FILE: "/app/database/bridge.sqlite"
+
+volumes:
+  contentapi-bridge-db: # This will hold your SQLite database
