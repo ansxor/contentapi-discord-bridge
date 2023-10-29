@@ -16,7 +16,6 @@ import (
 	"github.com/ansxor/contentapi-discord-bridge/contentapi"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/websocket"
-	"github.com/joho/godotenv"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -134,7 +133,12 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 	}
 }
 
+// FIXME: there is a dereference that happens here?
 func GetUsername(member *discordgo.Member) string {
+	if member == nil {
+		return "Unknown"
+	}
+
 	if name := member.Nick; name != "" {
 		return name
 	} else if name := member.User.GlobalName; name != "" {
@@ -199,6 +203,8 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		return
 	}
 
+	fmt.Println(message)
+	fmt.Println(message.Member)
 	name := GetUsername(message.Member)
 
 	_, err = contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, message.Content, name, *hash)
@@ -210,11 +216,6 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
-
 	contentapi_domain = os.Getenv("CONTENTAPI_DOMAIN")
 	contentapi_token = os.Getenv("CONTENTAPI_TOKEN")
 
