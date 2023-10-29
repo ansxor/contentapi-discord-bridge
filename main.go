@@ -71,7 +71,7 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 			// filter all messages sent by the Discord bot
 			// NOTE: should this be changed so that this only happens on MessageCreate events?
 			if event.User.Id == userId {
-				continue
+				// continue
 			}
 
 			fmt.Println("Message Event:" + event.Message.Text)
@@ -97,9 +97,7 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 						continue
 					}
 				}
-			}
-
-			if event.State == contentapi.MessageUpdated {
+			} else if event.State == contentapi.MessageUpdated {
 				webhookMessages, err := bot.GetWebhookMessagesForContentApiMessage(db, event.Message.Id)
 				if err != nil {
 					log.Default().Println(err)
@@ -107,6 +105,22 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 				}
 
 				bot.EditDiscordMessages(session, contentapi_domain, event, webhookMessages)
+			} else if event.State == contentapi.MessageDeleted {
+				webhookMessages, err := bot.GetWebhookMessagesForContentApiMessage(db, event.Message.Id)
+				if err != nil {
+					log.Default().Println(err)
+					continue
+				}
+
+				for _, webhookMessage := range webhookMessages {
+					bot.DeleteDiscordMessage(session, contentapi_domain, webhookMessage)
+				}
+
+				err = bot.RemoveWebhookMessagesForContentApiMessage(db, event.Message.Id)
+				if err != nil {
+					log.Default().Println(err)
+					continue
+				}
 			}
 		}
 	}

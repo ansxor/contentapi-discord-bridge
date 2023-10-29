@@ -59,3 +59,15 @@ func GetWebhookMessagesForContentApiMessage(db *sql.DB, contentApiMessageId int)
 
 	return webhookMessages, nil
 }
+
+func RemoveWebhookMessagesForContentApiMessage(db *sql.DB, contentApiMessageId int) error {
+	_, err := db.Exec(`
+		DELETE FROM webhook_message_store
+		WHERE contentapi_message_id = ?
+	`, contentApiMessageId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

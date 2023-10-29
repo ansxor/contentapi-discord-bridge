@@ -115,3 +115,47 @@ func TestGetWebhookMessagesForContentApiMessageMultipleMessages(t *testing.T) {
 		t.Error("StoreWebhookMessage failed")
 	}
 }
+
+func TestRemoveWebhookMessagesForContentApiMessageMultipleMessages(t *testing.T) {
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
+
+	err := InitWebhookMessageStore(db)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = StoreWebhookMessage(db, WebhookMessageData{
+		WebhookMessageId:        "test",
+		WebhookId:               "test",
+		WebhookMessageChannelId: "test",
+		ContentApiMessageId:     123,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = StoreWebhookMessage(db, WebhookMessageData{
+		WebhookMessageId:        "test2",
+		WebhookId:               "test2",
+		WebhookMessageChannelId: "test2",
+		ContentApiMessageId:     123,
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = RemoveWebhookMessagesForContentApiMessage(db, 123)
+	if err != nil {
+		t.Error(err)
+	}
+
+	messageData, err := GetWebhookMessagesForContentApiMessage(db, 123)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(messageData) != 0 {
+		t.Error("StoreWebhookMessage failed")
+	}
+}

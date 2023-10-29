@@ -87,3 +87,17 @@ func EditDiscordMessages(session *discordgo.Session, contentApiDomain string, me
 
 	return nil
 }
+
+func DeleteDiscordMessage(session *discordgo.Session, contentApiDomain string, webhookMessage WebhookMessageData) error {
+	webhook, err := session.Webhook(webhookMessage.WebhookId)
+	if err != nil {
+		return err
+	}
+
+	err = session.WebhookMessageDelete(webhook.ID, webhook.Token, webhookMessage.WebhookMessageId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
