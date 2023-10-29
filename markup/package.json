@@ -1,0 +1,15 @@
+{
+  "name": "markup",
+  "module": "server.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "markup2": "github:12Me21/markup2#9346bfa5f4b1cb167cdd0d52e177622056258c52",
+    "simple-markdown": "^0.7.3"
+  }
+}

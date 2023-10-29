@@ -4,6 +4,7 @@ package bot
 
 import (
 	"github.com/ansxor/contentapi-discord-bridge/contentapi"
+	"github.com/ansxor/contentapi-discord-bridge/markup"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -43,14 +44,19 @@ func FindOrCreateWebhook(session *discordgo.Session, channelId string) (*discord
 	return newWebhook, nil
 }
 
-func WriteDiscordMessage(session *discordgo.Session, contentApiDomain string, channelId string, message contentapi.MessageEvent) (*WebhookMessageData, error) {
+func WriteDiscordMessage(session *discordgo.Session, markupService *markup.MarkupService, contentApiDomain string, channelId string, message contentapi.MessageEvent) (*WebhookMessageData, error) {
 	webhook, err := FindOrCreateWebhook(session, channelId)
 	if err != nil {
 		return nil, err
 	}
 
+	content, err := markupService.MarkupToDiscordMarkdown(message.Message.Text, message.Message.Markup)
+	if err != nil {
+		return nil, err
+	}
+
 	webhookMessage := &discordgo.WebhookParams{
-		Content:   message.Message.Text,
+		Content:   content,
 		AvatarURL: message.User.GetAvatar(contentApiDomain, contentapi.DEFAULT_AVATAR_SIZE),
 		Username:  message.User.Username,
 	}
@@ -68,9 +74,14 @@ func WriteDiscordMessage(session *discordgo.Session, contentApiDomain string, ch
 	}, nil
 }
 
-func EditDiscordMessage(session *discordgo.Session, contentApiDomain string, message contentapi.MessageEvent, webhookMessage WebhookMessageData) error {
+func EditDiscordMessage(session *discordgo.Session, markupService *markup.MarkupService, contentApiDomain string, message contentapi.MessageEvent, webhookMessage WebhookMessageData) error {
+	content, err := markupService.MarkupToDiscordMarkdown(message.Message.Text, message.Message.Markup)
+	if err != nil {
+		return err
+	}
+
 	webhookMessageData := &discordgo.WebhookEdit{
-		Content: &message.Message.Text,
+		Content: &content,
 	}
 
 	webhook, err := session.Webhook(webhookMessage.WebhookId)

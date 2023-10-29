@@ -14,6 +14,7 @@ import (
 
 	bot "github.com/ansxor/contentapi-discord-bridge/bot"
 	"github.com/ansxor/contentapi-discord-bridge/contentapi"
+	"github.com/ansxor/contentapi-discord-bridge/markup"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorilla/websocket"
 
@@ -23,6 +24,7 @@ import (
 var db *sql.DB
 var contentapi_domain string
 var contentapi_token string
+var markupService *markup.MarkupService
 
 func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 	dialer := &websocket.Dialer{
@@ -86,7 +88,7 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 
 				for j := range channels {
 					channel := channels[j]
-					msg, err := bot.WriteDiscordMessage(session, contentapi_domain, channel, event)
+					msg, err := bot.WriteDiscordMessage(session, markupService, contentapi_domain, channel, event)
 					if err != nil {
 						log.Default().Println(err)
 						continue
@@ -106,7 +108,7 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 				}
 
 				for _, webhookMessage := range webhookMessages {
-					err := bot.EditDiscordMessage(session, contentapi_domain, event, webhookMessage)
+					err := bot.EditDiscordMessage(session, markupService, contentapi_domain, event, webhookMessage)
 					if err != nil {
 						log.Default().Println(err)
 						continue
@@ -233,8 +235,13 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 	}
 
 	name := GetUsername(member)
+	content, err := markupService.DiscordMarkdownToMarkup(message.Content)
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
 
-	_, err = contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, message.Content, name, *hash)
+	_, err = contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, content, name, *hash, "12y")
 
 	if err != nil {
 		log.Default().Println("There was an error writing the message to ContentAPI:", err)
@@ -245,6 +252,9 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 func main() {
 	contentapi_domain = os.Getenv("CONTENTAPI_DOMAIN")
 	contentapi_token = os.Getenv("CONTENTAPI_TOKEN")
+	markupService = &markup.MarkupService{
+		Domain: os.Getenv("MARKUP_SERVICE_DOMAIN"),
+	}
 
 	dg, err := discordgo.New("Bot " + os.Getenv("DISCORD_TOKEN"))
 	if err != nil {

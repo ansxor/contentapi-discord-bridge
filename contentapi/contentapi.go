@@ -155,13 +155,13 @@ func AuthorizedBlankHeaders(token string) map[string]string {
 	}
 }
 
-func ContentApiWriteMessage(domain string, token string, room int, content string, username string, avatar string) (int, error) {
+func ContentApiWriteMessage(domain string, token string, room int, content string, username string, avatar string, markup string) (int, error) {
 	message := RawMessage{
 		Text:      content,
 		ContentId: room,
 		Values: RawMessageValues{
 			Nickname: username,
-			Markup:   "plaintext",
+			Markup:   markup,
 			Avatar:   avatar,
 		},
 	}
