@@ -6,7 +6,6 @@ require (
 	github.com/bwmarrin/discordgo v0.27.2-0.20230922130345-1f0b57f11024
 	github.com/gorilla/websocket v1.5.0
 	github.com/mattn/go-sqlite3 v1.14.17
-	github.com/joho/godotenv v1.5.1
 )
 
 require (

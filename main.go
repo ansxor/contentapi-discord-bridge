@@ -133,7 +133,6 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 	}
 }
 
-// FIXME: there is a dereference that happens here?
 func GetUsername(member *discordgo.Member) string {
 	if member == nil {
 		return "Unknown"
@@ -141,11 +140,14 @@ func GetUsername(member *discordgo.Member) string {
 
 	if name := member.Nick; name != "" {
 		return name
-	} else if name := member.User.GlobalName; name != "" {
-		return name
+	} else if member.User != nil {
+		if name := member.User.GlobalName; name != "" {
+			return name
+		}
+		return member.User.Username
 	}
 
-	return member.User.Username
+	return "Unknown"
 }
 
 func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
@@ -153,7 +155,7 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		return
 	}
 
-	if strings.HasPrefix(message.Content, "$bind") {
+	if strings.HasPrefix(message.Content, "[bind]") {
 		params := strings.Split(message.Content, " ")
 		if len(params) < 2 {
 			return
@@ -184,6 +186,27 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		}
 
 		return
+	} else if message.Content == "[unbind]" {
+		// TODO: we should have a check whether any channels are bound to this room
+		err := bot.DisassociateChannel(db, message.ChannelID)
+		if err != nil {
+			log.Default().Println(err)
+			return
+		}
+
+		_, err = session.ChannelMessageSendComplex(message.ChannelID, &discordgo.MessageSend{
+			Content: "Channel unbound from any references.",
+			Reference: &discordgo.MessageReference{
+				ChannelID: message.ChannelID,
+				MessageID: message.ID,
+			},
+		})
+		if err != nil {
+			log.Default().Println(err)
+			return
+		}
+
+		return
 	}
 
 	room, err := bot.GetContentApiRoomFromDiscordChannel(db, message.ChannelID)
@@ -203,14 +226,18 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		return
 	}
 
-	fmt.Println(message)
-	fmt.Println(message.Member)
-	name := GetUsername(message.Member)
+	member, err := session.GuildMember(message.GuildID, message.Author.ID)
+	if err != nil {
+		log.Default().Println("There was an error getting the Guild Member. Make sure you have the right permissions for your bot: ", err)
+		return
+	}
+
+	name := GetUsername(member)
 
 	_, err = contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, message.Content, name, *hash)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Default().Println("There was an error writing the message to ContentAPI:", err)
 		return
 	}
 }
@@ -224,11 +251,20 @@ func main() {
 		panic(err)
 	}
 
+	intents := discordgo.MakeIntent(
+		discordgo.IntentsGuilds |
+			discordgo.IntentsGuildMessages |
+			discordgo.IntentsGuildMembers |
+			discordgo.IntentsAllWithoutPrivileged,
+	)
+
 	err = dg.Open()
 	if err != nil {
 		panic(err)
 	}
 	defer dg.Close()
+
+	dg.Identify.Intents = intents
 
 	dg.AddHandler(MessageCreate)
 

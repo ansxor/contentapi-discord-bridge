@@ -125,3 +125,42 @@ func TestStoreGetContentApiRoomFromDiscord(t *testing.T) {
 		t.Error("GetDiscordChannelsFromContentApiRoomId failed")
 	}
 }
+
+func TestStoreDisassociateChannel(t *testing.T) {
+	db, teardown := SetupDbTest(t)
+	defer teardown(t)
+
+	err := InitChannelStore(db)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = AddChannelPair(db, "test", 123)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ids, err := GetDiscordChannelsFromContentApiRoom(db, 123)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(ids) != 1 {
+		t.Error("GetDiscordChannelsFromContentApiRoomId failed")
+	}
+
+	err = DisassociateChannel(db, "test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	ids, err = GetDiscordChannelsFromContentApiRoom(db, 123)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(ids) != 0 {
+		t.Error("DisassociateChannel failed")
+	}
+}

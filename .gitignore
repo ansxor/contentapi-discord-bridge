@@ -1,3 +1,5 @@
 contentapi.db
 contentapi-discord-bridge
 .env
+.vscode
+__debug*

@@ -35,6 +35,18 @@ func AddChannelPair(db *sql.DB, discordChannelId string, contentApiRoomId int) (
 	return &pair, nil
 }
 
+func DisassociateChannel(db *sql.DB, discordChannelId string) error {
+	_, err := db.Exec(`
+		DELETE FROM channel_store
+		WHERE discord_channel_id = ?
+	`, discordChannelId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetDiscordChannelsFromContentApiRoom(db *sql.DB, contentApiRoomId int) ([]string, error) {
 	rows, err := db.Query(`
 		SELECT discord_channel_id
