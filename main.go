@@ -8,6 +8,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 
 	bot "github.com/ansxor/contentapi-discord-bridge/bot"
@@ -147,6 +149,39 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		return
 	}
 
+	if strings.HasPrefix(message.Content, "$bind") {
+		params := strings.Split(message.Content, " ")
+		if len(params) < 2 {
+			return
+		}
+
+		room, err := strconv.Atoi(params[1])
+		if err != nil {
+			log.Default().Println(err)
+			return
+		}
+
+		_, err = bot.AddChannelPair(db, message.ChannelID, room)
+		if err != nil {
+			log.Default().Println(err)
+			return
+		}
+
+		_, err = session.ChannelMessageSendComplex(message.ChannelID, &discordgo.MessageSend{
+			Content: fmt.Sprintf("Bound to room %d", room),
+			Reference: &discordgo.MessageReference{
+				ChannelID: message.ChannelID,
+				MessageID: message.ID,
+			},
+		})
+		if err != nil {
+			log.Default().Println(err)
+			return
+		}
+
+		return
+	}
+
 	room, err := bot.GetContentApiRoomFromDiscordChannel(db, message.ChannelID)
 
 	if err != nil {
@@ -214,11 +249,6 @@ func main() {
 	}
 
 	err = bot.InitWebhookMessageStore(db)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = bot.AddChannelPair(db, "1144596479705616405", 6661)
 	if err != nil {
 		panic(err)
 	}
