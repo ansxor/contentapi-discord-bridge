@@ -104,7 +104,13 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 					continue
 				}
 
-				bot.EditDiscordMessages(session, contentapi_domain, event, webhookMessages)
+				for _, webhookMessage := range webhookMessages {
+					err := bot.EditDiscordMessage(session, contentapi_domain, event, webhookMessage)
+					if err != nil {
+						log.Default().Println(err)
+						continue
+					}
+				}
 			} else if event.State == contentapi.MessageDeleted {
 				webhookMessages, err := bot.GetWebhookMessagesForContentApiMessage(db, event.Message.Id)
 				if err != nil {

@@ -68,21 +68,19 @@ func WriteDiscordMessage(session *discordgo.Session, contentApiDomain string, ch
 	}, nil
 }
 
-func EditDiscordMessages(session *discordgo.Session, contentApiDomain string, message contentapi.MessageEvent, discordMessage []WebhookMessageData) error {
-	for _, webhookMessageData := range discordMessage {
-		webhookMessage := &discordgo.WebhookEdit{
-			Content: &message.Message.Text,
-		}
+func EditDiscordMessage(session *discordgo.Session, contentApiDomain string, message contentapi.MessageEvent, webhookMessage WebhookMessageData) error {
+	webhookMessageData := &discordgo.WebhookEdit{
+		Content: &message.Message.Text,
+	}
 
-		webhook, err := session.Webhook(webhookMessageData.WebhookId)
-		if err != nil {
-			return err
-		}
+	webhook, err := session.Webhook(webhookMessage.WebhookId)
+	if err != nil {
+		return err
+	}
 
-		_, err = session.WebhookMessageEdit(webhook.ID, webhook.Token, webhookMessageData.WebhookMessageId, webhookMessage)
-		if err != nil {
-			return err
-		}
+	_, err = session.WebhookMessageEdit(webhook.ID, webhook.Token, webhookMessage.WebhookMessageId, webhookMessageData)
+	if err != nil {
+		return err
 	}
 
 	return nil
