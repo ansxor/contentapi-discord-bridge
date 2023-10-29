@@ -71,7 +71,7 @@ func ContentApiConnection(session *discordgo.Session, db *sql.DB) {
 			// filter all messages sent by the Discord bot
 			// NOTE: should this be changed so that this only happens on MessageCreate events?
 			if event.User.Id == userId {
-				// continue
+				continue
 			}
 
 			fmt.Println("Message Event:" + event.Message.Text)
