@@ -259,6 +259,14 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		return
 	}
 
+	for _, attachment := range message.Attachments {
+		// attach a newline only if the content is empty so there's isn't a blank line
+		if content != "" {
+			content += "\n"
+		}
+		content += "!" + attachment.URL
+	}
+
 	_, err = contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, content, name, *hash, "12y")
 
 	if err != nil {
