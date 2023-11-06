@@ -3,12 +3,25 @@ package bot
 // TODO: Need to make test cases for all of these, but it's kinda hard to do
 
 import (
+	"regexp"
+
 	"github.com/ansxor/contentapi-discord-bridge/contentapi"
 	"github.com/ansxor/contentapi-discord-bridge/markup"
 	"github.com/bwmarrin/discordgo"
 )
 
 const webhookName = "ContentAPI Bridge Webhook"
+
+func FilterMentions(text string) string {
+	pattern := `@(everyone|here)`
+	re := regexp.MustCompile(pattern)
+
+	replacementFunc := func(match string) string {
+		return "@\u200B" + match[1:]
+	}
+
+	return re.ReplaceAllStringFunc(text, replacementFunc)
+}
 
 func FindBotWebhook(session *discordgo.Session, channelId string) (*discordgo.Webhook, error) {
 	webhooks, err := session.ChannelWebhooks(channelId)
@@ -55,6 +68,8 @@ func WriteDiscordMessage(session *discordgo.Session, markupService *markup.Marku
 		return nil, err
 	}
 
+	content = FilterMentions(content)
+
 	webhookMessage := &discordgo.WebhookParams{
 		Content:   content,
 		AvatarURL: message.User.GetAvatar(contentApiDomain, contentapi.DEFAULT_AVATAR_SIZE),
@@ -79,6 +94,8 @@ func EditDiscordMessage(session *discordgo.Session, markupService *markup.Markup
 	if err != nil {
 		return err
 	}
+
+	content = FilterMentions(content)
 
 	webhookMessageData := &discordgo.WebhookEdit{
 		Content: &content,
