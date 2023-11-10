@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 )
 
 const DEFAULT_AVATAR_SIZE = 100
@@ -45,6 +46,13 @@ type RawMessageValues struct {
 }
 
 type RawMessage struct {
+	Text      string           `json:"text"`
+	ContentId int              `json:"contentid"`
+	Values    RawMessageValues `json:"values"`
+}
+
+type RawEditMessage struct {
+	Id        int              `json:"id"`
 	Text      string           `json:"text"`
 	ContentId int              `json:"contentid"`
 	Values    RawMessageValues `json:"values"`
@@ -197,6 +205,73 @@ func ContentApiWriteMessage(domain string, token string, room int, content strin
 	}
 
 	return int(retData["id"].(float64)), nil
+}
+
+func ContentApiEditMessage(domain string, token string, id int, room int, content string, username string, avatar string, markup string) error {
+	message := RawEditMessage{
+		Id:        id,
+		Text:      content,
+		ContentId: room,
+		Values: RawMessageValues{
+			Nickname: username,
+			Markup:   markup,
+			Avatar:   avatar,
+		},
+	}
+
+	client := &http.Client{}
+	apiUrl := ApiRoute(domain) + "/Write/message"
+
+	data, err := json.Marshal(message)
+
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+
+	for k, v := range AuthorizedHeaders(token) {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var retData map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&retData)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ContentApiDeleteMessage(domain string, token string, id int) error {
+	client := &http.Client{}
+	apiUrl := ApiRoute(domain) + "/Delete/message/" + strconv.Itoa(id)
+
+	req, err := http.NewRequest("POST", apiUrl, nil)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range AuthorizedHeaders(token) {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }
 
 func UploadFile(domain string, token string, bucket string, file io.Reader, filename string) (string, error) {

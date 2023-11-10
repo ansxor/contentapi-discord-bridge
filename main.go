@@ -267,10 +267,89 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		content += "!" + attachment.URL
 	}
 
-	_, err = contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, content, name, *hash, "12y")
+	id, err := contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, content, name, *hash, "12y")
 
 	if err != nil {
 		log.Default().Println("There was an error writing the message to ContentAPI:", err)
+		return
+	}
+
+	contentapiMessage := bot.ContentApiMessageData{
+		DiscordMessageId:    message.ID,
+		ContentApiMessageId: id,
+		ContentApiRoomId:    *room,
+	}
+
+	bot.StoreContentApiMessage(db, contentapiMessage)
+}
+
+func MessageEdit(session *discordgo.Session, message *discordgo.MessageUpdate) {
+	if message.Author.Bot {
+		return
+	}
+
+	contentapi_message, err := bot.GetContentApiMessageForDiscordMessage(db, message.ID)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if contentapi_message == nil {
+		return
+	}
+
+	hash, err := bot.FetchAvatarFromUser(db, contentapi_domain, contentapi_token, message.Author)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	member, err := session.GuildMember(message.GuildID, message.Author.ID)
+	if err != nil {
+		log.Default().Println("There was an error getting the Guild Member. Make sure you have the right permissions for your bot: ", err)
+		return
+	}
+
+	name := GetUsername(member)
+	content, err := markupService.DiscordMarkdownToMarkup(message.Content)
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+
+	for _, attachment := range message.Attachments {
+		// attach a newline only if the content is empty so there's isn't a blank line
+		if content != "" {
+			content += "\n"
+		}
+		content += "!" + attachment.URL
+	}
+
+	err = contentapi.ContentApiEditMessage(contentapi_domain, contentapi_token, contentapi_message.ContentApiMessageId, contentapi_message.ContentApiRoomId, content, name, *hash, "12y")
+
+	if err != nil {
+		log.Default().Println("There was an error editing the message on ContentAPI:", err)
+		return
+	}
+}
+
+func MessageDelete(session *discordgo.Session, message *discordgo.MessageDelete) {
+	contentapi_message, err := bot.GetContentApiMessageForDiscordMessage(db, message.ID)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if contentapi_message == nil {
+		return
+	}
+
+	err = contentapi.ContentApiDeleteMessage(contentapi_domain, contentapi_token, contentapi_message.ContentApiMessageId)
+
+	if err != nil {
+		log.Default().Println("There was an error deleting the message on ContentAPI:", err)
 		return
 	}
 }
@@ -303,6 +382,8 @@ func main() {
 	dg.Identify.Intents = intents
 
 	dg.AddHandler(MessageCreate)
+	dg.AddHandler(MessageEdit)
+	dg.AddHandler(MessageDelete)
 
 	db, err = sql.Open("sqlite3", "file:"+os.Getenv("DB_FILE")+"?cache=shared")
 	if err != nil {
@@ -322,6 +403,11 @@ func main() {
 	}
 
 	err = bot.InitWebhookMessageStore(db)
+	if err != nil {
+		panic(err)
+	}
+
+	err = bot.InitContentApiMessageStore(db)
 	if err != nil {
 		panic(err)
 	}
