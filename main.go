@@ -284,6 +284,12 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 }
 
 func MessageEdit(session *discordgo.Session, message *discordgo.MessageUpdate) {
+	// For some reason, there seems to be cases when editing the messages results
+	// in these being nil
+	if message == nil || message.Author == nil {
+		return
+	}
+
 	if message.Author.Bot {
 		return
 	}
