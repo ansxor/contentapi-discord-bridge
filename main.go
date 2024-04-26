@@ -264,7 +264,11 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		if content != "" {
 			content += "\n"
 		}
-		content += "!" + attachment.URL
+		attachment_text := "!" + attachment.URL
+		if strings.HasPrefix(attachment.Filename, "SPOILER_") {
+			attachment_text = "\\h{" + attachment_text + "}"
+		}
+		content += attachment_text
 	}
 
 	id, err := contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, content, name, *hash, "12y")
