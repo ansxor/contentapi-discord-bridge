@@ -266,7 +266,7 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		}
 		attachment_text := "!" + attachment.URL
 		if strings.HasPrefix(attachment.Filename, "SPOILER_") {
-			attachment_text = "\\h{" + attachment_text + "}"
+			attachment_text = "{#spoiler " + attachment_text + "}"
 		}
 		content += attachment_text
 	}
