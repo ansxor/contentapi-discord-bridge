@@ -5,11 +5,10 @@ services:
     volumes:
       - contentapi-bridge-db:/app/database
     environment:
-      CONTENTAPI_DOMAIN: "${CONTENTAPI_DOMAIN}"
-      CONTENTAPI_TOKEN: "${CONTENTAPI_TOKEN}"
-      DISCORD_TOKEN: "${DISCORD_TOKEN}"
       DB_FILE: "/app/database/bridge.sqlite"
       MARKUP_SERVICE_DOMAIN: "markup-service:3000"
+    env_file:
+      - .env
 
   markup-service:
     build: ./markup
