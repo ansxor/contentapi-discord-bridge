@@ -2,6 +2,7 @@ version: "3.3"
 services:
   contentapi-discord-bridge:
     build: .
+    restart: on-failure
     volumes:
       - contentapi-bridge-db:/app/database
     environment:
@@ -12,6 +13,7 @@ services:
 
   markup-service:
     build: ./markup
+    restart: on-failure
 
 volumes:
   contentapi-bridge-db: # This will hold your SQLite database
