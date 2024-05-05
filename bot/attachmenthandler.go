@@ -3,7 +3,6 @@ package bot
 import (
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"path"
 	"slices"
@@ -67,9 +66,7 @@ func GetMappedAttachment(url string, contentapiDomain string, contentapiToken st
 
 	attachmentUrl, err := contentapi.UploadFile(contentapiDomain, contentapiToken, "discord-bridge-attachments", fileStream, *fileName)
 	if err != nil {
-		log.Default().Println("Failed to upload attachment to ContentAPI")
-		log.Default().Println(err)
-		return &url, nil
+		return nil, err
 	}
 
 	return &attachmentUrl, nil
