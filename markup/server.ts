@@ -8,9 +8,7 @@ import markuprenderToMd from "./render";
 const parser = new Markup_Parse_12y2();
 const langs = new Markup_Langs([parser, new Markup_Legacy()]);
 
-console.log("Running markup service!");
-
-Bun.serve({
+const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     if (url.pathname === "/discord2contentapi") {
@@ -29,3 +27,5 @@ Bun.serve({
     return new Response("404");
   },
 });
+
+console.log(`Running markup service on port ${server.port}!`);

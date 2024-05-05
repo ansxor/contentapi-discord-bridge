@@ -170,6 +170,29 @@ func GetUsername(member *discordgo.Member) string {
 	return "Unknown"
 }
 
+func AddAttachments(content string, attachments []*discordgo.MessageAttachment) string {
+	for _, attachment := range attachments {
+		// attach a newline only if the content is empty so there's isn't a blank line
+		if content != "" {
+			content += "\n"
+		}
+		attachmentText := "!"
+		attachmentUrl, err := bot.GetMappedAttachment(attachment.URL, contentapi_domain, contentapi_token)
+		if err != nil {
+			log.Default().Println(err)
+			attachmentText += attachment.URL
+		} else {
+			attachmentText += *attachmentUrl
+		}
+		if strings.HasPrefix(attachment.Filename, "SPOILER_") {
+			attachmentText = "{#spoiler " + attachmentText + "}"
+		}
+		content += attachmentText
+	}
+
+	return content
+}
+
 func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
 	if message.Author.Bot {
 		return
@@ -259,17 +282,7 @@ func MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate)
 		return
 	}
 
-	for _, attachment := range message.Attachments {
-		// attach a newline only if the content is empty so there's isn't a blank line
-		if content != "" {
-			content += "\n"
-		}
-		attachment_text := "!" + attachment.URL
-		if strings.HasPrefix(attachment.Filename, "SPOILER_") {
-			attachment_text = "{#spoiler " + attachment_text + "}"
-		}
-		content += attachment_text
-	}
+	content = AddAttachments(content, message.Attachments)
 
 	id, err := contentapi.ContentApiWriteMessage(contentapi_domain, contentapi_token, *room, content, name, *hash, "12y")
 
@@ -328,20 +341,7 @@ func MessageEdit(session *discordgo.Session, message *discordgo.MessageUpdate) {
 		return
 	}
 
-	for _, attachment := range message.Attachments {
-		// attach a newline only if the content is empty so there's isn't a blank line
-		if content != "" {
-			content += "\n"
-		}
-		content += "!"
-		attachmentUrl, err := bot.GetMappedAttachment(attachment.URL, contentapi_domain, contentapi_token)
-		if err != nil {
-			log.Default().Println(err)
-			content += attachment.URL
-		} else {
-			content += *attachmentUrl
-		}
-	}
+	content = AddAttachments(content, message.Attachments)
 
 	err = contentapi.ContentApiEditMessage(contentapi_domain, contentapi_token, contentapi_message.ContentApiMessageId, contentapi_message.ContentApiRoomId, content, name, *hash, "12y")
 
