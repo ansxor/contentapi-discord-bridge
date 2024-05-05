@@ -333,7 +333,14 @@ func MessageEdit(session *discordgo.Session, message *discordgo.MessageUpdate) {
 		if content != "" {
 			content += "\n"
 		}
-		content += "!" + attachment.URL
+		content += "!"
+		attachmentUrl, err := bot.GetMappedAttachment(attachment.URL, contentapi_domain, contentapi_token)
+		if err != nil {
+			log.Default().Println(err)
+			content += attachment.URL
+		} else {
+			content += *attachmentUrl
+		}
 	}
 
 	err = contentapi.ContentApiEditMessage(contentapi_domain, contentapi_token, contentapi_message.ContentApiMessageId, contentapi_message.ContentApiRoomId, content, name, *hash, "12y")
