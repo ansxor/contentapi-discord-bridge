@@ -62,6 +62,10 @@ func ApiRoute(domain string) string {
 	return fmt.Sprintf("https://%s/api", domain)
 }
 
+func FileRoute(domain string, fileHash string) string {
+	return fmt.Sprintf("%s/File/raw/%s", ApiRoute(domain), fileHash)
+}
+
 func (u User) GetAvatar(domain string, size int) string {
 	return fmt.Sprintf("%s/File/raw/%s?size=%d&crop=true", ApiRoute(domain), u.Avatar, size)
 }

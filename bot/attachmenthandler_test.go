@@ -44,6 +44,10 @@ func TestGetAttachmentStreamIncorrectFileSize(t *testing.T) {
 // 	if *url == CORRECT_FILE {
 // 		t.Errorf("Original URL %s is not supposed to match new URL %s", CORRECT_FILE, *url)
 // 	}
+
+// 	if !strings.HasPrefix(*url, "http") {
+// 		t.Errorf("New URL %s is supposed to begin with http", *url)
+// 	}
 // }
 
 // func TestGetMappedAttachmentIncorrectFileType(t *testing.T) {

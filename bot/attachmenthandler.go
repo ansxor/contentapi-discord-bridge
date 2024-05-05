@@ -64,10 +64,11 @@ func GetMappedAttachment(url string, contentapiDomain string, contentapiToken st
 		return &url, nil
 	}
 
-	attachmentUrl, err := contentapi.UploadFile(contentapiDomain, contentapiToken, "discord-bridge-attachments", fileStream, *fileName)
+	attachmentHash, err := contentapi.UploadFile(contentapiDomain, contentapiToken, "discord-bridge-attachments", fileStream, *fileName)
 	if err != nil {
 		return nil, err
 	}
 
+	attachmentUrl := contentapi.FileRoute(contentapiDomain, attachmentHash)
 	return &attachmentUrl, nil
 }
