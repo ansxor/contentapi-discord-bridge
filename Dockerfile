@@ -1,18 +1,25 @@
-# Use the official Go image
-FROM golang:1.22.2
+FROM python:3.12-alpine
 
-# Set the working directory
+# Configure Poetry
+ENV POETRY_VERSION=1.8.4
+ENV POETRY_HOME=/opt/poetry
+ENV POETRY_VENV=/opt/poetry-venv
+ENV POETRY_CACHE_DIR=/opt/.cache
+
+# Install poetry separated from system interpreter
+RUN python3 -m venv $POETRY_VENV \
+    && $POETRY_VENV/bin/pip install -U pip setuptools \
+    && $POETRY_VENV/bin/pip install poetry==${POETRY_VERSION}
+
+# Add `poetry` to PATH
+ENV PATH="${PATH}:${POETRY_VENV}/bin"
+
 WORKDIR /app
 
-# Copy go mod files and download dependencies
-COPY go.mod go.sum ./
-RUN go mod download
+# Install dependencies
+COPY poetry.lock pyproject.toml ./
+RUN poetry install
 
-# Copy the source code
-COPY . .
-
-# Build the Go app
-RUN go build -o contentapi-discord-bridge
-
-# Run the binary
-CMD ["./contentapi-discord-bridge"]
+# Run your app
+COPY . /app
+CMD [ "poetry", "run", "python", "-m", "contentapi_discord_bridge.main" ]

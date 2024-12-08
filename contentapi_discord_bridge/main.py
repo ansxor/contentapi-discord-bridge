@@ -14,7 +14,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from .contentapi import ContentApi
 from .markup import MarkupService
-from app import contentapi
+from contentapi_discord_bridge import contentapi
 
 content_api = ContentApi(
     os.environ["CONTENTAPI_DOMAIN"],

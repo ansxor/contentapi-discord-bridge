@@ -17,18 +17,27 @@
           sqlalchemy
           aiosqlite
         ]);
-      in {
-        packages.default =
-          let
-            attrs = project.renderers.buildPythonPackage { inherit python; };
-          in
-            python.pkgs.buildPythonPackage (attrs);
+        pythonApp = python.pkgs.buildPythonPackage (project.renderers.buildPythonPackage { inherit python; });
+      in
+      {
+        packages.default = pythonApp;
+        packages.docker = pkgs.dockerTools.buildImage {
+          name = "contentapi-discord-bridge";
+          tag = "latest";
+          contents = [
+            pythonApp
+          ];
+          config = {
+            Cmd = [ "${pythonApp}/bin/cli" ];
+          };
+        };
         devShell = pkgs.mkShell {
           buildInputs=[
             pkgs.python312
             pkgs.python312Packages.aiosqlite
             pkgs.python312Packages.sqlalchemy
             pkgs.python312Packages.nextcord
+            (pkgs.poetry.override { python3 = pkgs.python312; })
           ];
         };
       }

@@ -2,7 +2,7 @@ import unittest
 
 from nextcord import User
 
-from app import contentapi
+from contentapi_discord_bridge import contentapi
 
 
 class TestContentApi(unittest.TestCase):
