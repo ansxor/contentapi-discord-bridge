@@ -3,3 +3,7 @@ contentapi-discord-bridge
 .env
 .vscode
 __debug*
+.direnv
+__pycache__
+data.db
+result
