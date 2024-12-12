@@ -2,6 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from enum import Enum
 import json
+import traceback
 from typing import Any, Awaitable, Callable
 
 import aiohttp
@@ -300,5 +301,5 @@ class ContentApi:
                                         for i in self._on_deleted_listeners:
                                             await i(event)
             except Exception:
+                print(traceback.format_exc())
                 await asyncio.sleep(5)
-                continue
