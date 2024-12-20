@@ -1,8 +1,12 @@
 import asyncio
 from dataclasses import dataclass
 from enum import Enum
+import itertools
 import json
+import signal
 import traceback
+import websockets
+from websockets.asyncio.client import connect, ClientConnection
 from typing import Any, Awaitable, Callable
 
 import aiohttp
@@ -38,6 +42,15 @@ class MessageEvent:
 
 
 type MessageFunc = Callable[[MessageEvent], Awaitable[None]]
+
+
+async def keepalive(websocket: ClientConnection, ping_interval: int = 30):
+    while True:
+        await asyncio.sleep(ping_interval)
+        try:
+            await websocket.send(json.dumps({"type": "ping"}))
+        except websockets.ConnectionClosed:
+            break
 
 
 class ContentApi:
@@ -280,26 +293,28 @@ class ContentApi:
 
     async def socket(self):
         while True:
-            try:
-                async with aiohttp.ClientSession(
-                    headers=self._authorized_blank_headers()
-                ) as session:
-                    async with session.ws_connect(
-                        f"wss://{self.domain}/api/live/ws?token={self.token}"
-                    ) as ws:
-                        async for msg in ws:
-                            if msg.type == aiohttp.WSMsgType.TEXT:
-                                events = self.parse_message_events(msg.data)
-                                for event in events:
-                                    if event.state == MessageEventType.CREATED:
-                                        for i in self._on_created_listeners:
-                                            await i(event)
-                                    elif event.state == MessageEventType.UPDATED:
-                                        for i in self._on_updated_listeners:
-                                            await i(event)
-                                    elif event.state == MessageEventType.DELETED:
-                                        for i in self._on_deleted_listeners:
-                                            await i(event)
-            except Exception:
-                print(traceback.format_exc())
-                await asyncio.sleep(5)
+            async with connect(
+                f"wss://{self.domain}/api/live/ws?token={self.token}"
+            ) as ws:
+                keepalive_task = asyncio.create_task(keepalive(ws))
+                try:
+                    async for msg in ws:
+                        events = self.parse_message_events(str(msg))
+                        for event in events:
+                            if event.state == MessageEventType.CREATED:
+                                for i in self._on_created_listeners:
+                                    await i(event)
+                            elif event.state == MessageEventType.UPDATED:
+                                for i in self._on_updated_listeners:
+                                    await i(event)
+                            elif event.state == MessageEventType.DELETED:
+                                for i in self._on_deleted_listeners:
+                                    await i(event)
+                except websockets.ConnectionClosed:
+                    print("Connection closed")
+                except Exception:
+                    print("Unexpected error")
+                    print(traceback.format_exc())
+                finally:
+                    _ = keepalive_task.cancel()
+                    await asyncio.sleep(15)

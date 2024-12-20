@@ -27,6 +27,7 @@ nextcord = "2.6.0"
 SQLAlchemy = "2.0.34"
 aiosqlite = "0.20.0"
 setuptools = "75.6.0"
+websockets = "^14.1"
 
 
 [build-system]
