@@ -168,7 +168,7 @@ class ContentApi:
         _ = await self.get_user_id()
 
     async def get_user_id(self) -> int:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self._authorized_headers()) as session:
             async with session.get(f"{self.api_route()}/User/me") as resp:
                 data = await resp.json()
                 self._uid = int(data["id"])
