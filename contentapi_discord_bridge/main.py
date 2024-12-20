@@ -279,6 +279,14 @@ async def add_attachments(content: str, message: nextcord.Message) -> str:
     return content
 
 
+def get_user_name(user: nextcord.Member | nextcord.User) -> str:
+    if isinstance(user, nextcord.Member) and user.nick is not None:
+        return str(user.nick)
+    if user.global_name is not None:
+        return user.global_name
+    return user.name
+
+
 @bot.event
 async def on_message(message: nextcord.Message):
     if message.author.bot:
@@ -301,7 +309,7 @@ async def on_message(message: nextcord.Message):
         id = await content_api.write_message(
             room_id,
             content,
-            message.author.name,
+            get_user_name(message.author),
             avatar,
             "12y",
         )
@@ -345,7 +353,7 @@ async def on_message_edit(_: nextcord.Message, after: nextcord.Message):
             int(str(contentapi_message.content_api_message_id)),
             int(str(contentapi_message.content_api_room_id)),
             content,
-            after.author.name,
+            get_user_name(after.author),
             avatar,
             "12y",
         )
