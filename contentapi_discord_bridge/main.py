@@ -178,7 +178,7 @@ class WebhookMessageStore(Base):
         return f"<WebhookMessageStore(discord_message_id={self.discord_message_id}, webhook_id={self.webhook_id}, webhook_message_channel_id={self.webhook_message_channel_id}, contentapi_message_id={self.contentapi_message_id})>"
 
 
-engine = create_async_engine(f"sqlite+aiosqlite:///{os.environ['DB_FILE']}", echo=True)
+engine = create_async_engine(f"sqlite+aiosqlite:///{os.environ['DB_FILE']}")
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 
