@@ -281,9 +281,10 @@ async def add_attachments(content: str, message: nextcord.Message) -> str:
             attachment.size > 25000000
             or attachment.content_type not in ACCEPTED_MIME_TYPES
         ):
-            content += "\n!{attachment.url}"
-        hash = await DiscordAttachment.get_attachment(attachment)
-        content += f"\n!{content_api.file_route(hash)}"
+            content += f"\n!{attachment.url}"
+        else:
+            hash = await DiscordAttachment.get_attachment(attachment)
+            content += f"\n!{content_api.file_route(hash)}"
 
     return content
 
