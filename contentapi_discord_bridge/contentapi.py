@@ -57,6 +57,7 @@ class ContentApi:
     def __init__(self, domain: str, token: str):
         self.domain: str = domain
         self.token: str = token
+        self._uid = None
         self._on_created_listeners: list[MessageFunc] = []
         self._on_updated_listeners: list[MessageFunc] = []
         self._on_deleted_listeners: list[MessageFunc] = []
@@ -163,11 +164,25 @@ class ContentApi:
                 data = await resp.json()
                 return str(data["hash"])
 
+    async def load_user_id(self):
+        _ = await self.get_user_id()
+
     async def get_user_id(self) -> int:
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{self.api_route()}/User/me") as resp:
                 data = await resp.json()
-                return int(data["id"])
+                self._uid = int(data["id"])
+                return self._uid
+
+    @property
+    def uid(self):
+        if self._uid is None:
+            raise ValueError("User ID is not loaded")
+        return self._uid
+
+    @uid.getter
+    def uid(self):
+        return self._uid
 
     async def get_room_name(self, room_id: int) -> str:
         async with aiohttp.ClientSession(headers=self._authorized_headers()) as session:
@@ -292,6 +307,7 @@ class ContentApi:
         return events
 
     async def socket(self):
+        await self.load_user_id()
         while True:
             async with connect(
                 f"wss://{self.domain}/api/live/ws?token={self.token}"
@@ -317,4 +333,5 @@ class ContentApi:
                     print(traceback.format_exc())
                 finally:
                     _ = keepalive_task.cancel()
+                    print("Will attempt to reconnect in 15 seconds")
                     await asyncio.sleep(15)

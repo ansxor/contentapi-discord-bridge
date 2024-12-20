@@ -391,6 +391,9 @@ async def on_message_created(event: contentapi.MessageEvent):
     if event.user is None:
         return
 
+    if event.user.id == content_api.uid:
+        return
+
     async with async_session.begin() as session:
         channels_pairs = await session.scalars(
             sqla.select(ChannelPair).where(
@@ -428,6 +431,9 @@ async def on_message_updated(event: contentapi.MessageEvent):
     if event.user is None:
         return
 
+    if event.user.id == content_api.uid:
+        return
+
     async with async_session.begin() as session:
         webhook_messages = await session.scalars(
             sqla.select(WebhookMessageStore).where(
@@ -437,15 +443,17 @@ async def on_message_updated(event: contentapi.MessageEvent):
 
         for webhook_message in webhook_messages.all():
             webhook = await bot.fetch_webhook(int(str(webhook_message.webhook_id)))
+            content = await markup_service.contentapi_to_discord(
+                event.message.text, "12y"
+            )
             _ = await webhook.edit_message(
-                int(str(webhook_message.discord_message_id)), content=event.message.text
+                int(str(webhook_message.discord_message_id)), content=content
             )
 
 
 @content_api.on_message_deleted
 async def on_message_deleted(event: contentapi.MessageEvent):
     print(event)
-
     async with async_session.begin() as session:
         webhook_messages = await session.scalars(
             sqla.select(WebhookMessageStore).where(
