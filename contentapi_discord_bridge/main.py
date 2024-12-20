@@ -115,15 +115,20 @@ class AvatarStore(Base):
         user: nextcord.User | nextcord.Member, content_api: ContentApi
     ) -> str:
         async with async_session.begin() as session:
+            avatar = user.avatar
+            if avatar is None:
+                avatar = user.default_avatar
+
             existing_pair = await session.get(AvatarStore, user.id)
             if existing_pair is not None:
-                return str(existing_pair.content_api_hash)
+                if str(existing_pair.discord_avatar_url) == str(avatar.url):
+                    return str(existing_pair.content_api_hash)
+                else:
+                    await session.delete(existing_pair)
+                    session.commit()
 
+        async with async_session.begin() as session:
             with tempfile.TemporaryFile() as temp_file:
-                avatar = user.avatar
-                if avatar is None:
-                    avatar = user.default_avatar
-
                 _ = await avatar.save(temp_file)
                 _ = temp_file.seek(0)
                 bytes = temp_file.read()
@@ -213,6 +218,9 @@ async def bind(interaction: nextcord.Interaction[nextcord.Client], room_id: int)
             old_channel_pair = await session.get(ChannelPair, channel_id)
             if old_channel_pair is not None:
                 await session.delete(old_channel_pair)
+                await session.commit()
+
+        async with async_session.begin() as session:
             session.add(
                 ChannelPair(discord_channel_id=channel_id, content_api_room_id=room_id)
             )
@@ -276,6 +284,7 @@ async def add_attachments(content: str, message: nextcord.Message) -> str:
             content += "\n!{attachment.url}"
         hash = await DiscordAttachment.get_attachment(attachment)
         content += f"\n!{content_api.file_route(hash)}"
+
     return content
 
 
