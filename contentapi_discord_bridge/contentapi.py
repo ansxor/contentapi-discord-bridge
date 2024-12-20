@@ -4,6 +4,7 @@ from enum import Enum
 import itertools
 import json
 import signal
+import trace
 import traceback
 import websockets
 from websockets.asyncio.client import connect, ClientConnection
@@ -309,29 +310,33 @@ class ContentApi:
     async def socket(self):
         await self.load_user_id()
         while True:
-            async with connect(
-                f"wss://{self.domain}/api/live/ws?token={self.token}"
-            ) as ws:
-                keepalive_task = asyncio.create_task(keepalive(ws))
-                try:
-                    async for msg in ws:
-                        events = self.parse_message_events(str(msg))
-                        for event in events:
-                            if event.state == MessageEventType.CREATED:
-                                for i in self._on_created_listeners:
-                                    await i(event)
-                            elif event.state == MessageEventType.UPDATED:
-                                for i in self._on_updated_listeners:
-                                    await i(event)
-                            elif event.state == MessageEventType.DELETED:
-                                for i in self._on_deleted_listeners:
-                                    await i(event)
-                except websockets.ConnectionClosed:
-                    print("Connection closed")
-                except Exception:
-                    print("Unexpected error")
-                    print(traceback.format_exc())
-                finally:
-                    _ = keepalive_task.cancel()
-                    print("Will attempt to reconnect in 15 seconds")
-                    await asyncio.sleep(15)
+            try:
+                async with connect(
+                    f"wss://{self.domain}/api/live/ws?token={self.token}"
+                ) as ws:
+                    keepalive_task = asyncio.create_task(keepalive(ws))
+                    try:
+                        async for msg in ws:
+                            events = self.parse_message_events(str(msg))
+                            for event in events:
+                                if event.state == MessageEventType.CREATED:
+                                    for i in self._on_created_listeners:
+                                        await i(event)
+                                elif event.state == MessageEventType.UPDATED:
+                                    for i in self._on_updated_listeners:
+                                        await i(event)
+                                elif event.state == MessageEventType.DELETED:
+                                    for i in self._on_deleted_listeners:
+                                        await i(event)
+                    except websockets.ConnectionClosed:
+                        print("Connection closed")
+                    except Exception:
+                        print("Unexpected error")
+                        print(traceback.format_exc())
+                    finally:
+                        _ = keepalive_task.cancel()
+            except OSError:
+                print("Failed to connect to server")
+            finally:
+                print("Will attempt to reconnect in 15 seconds")
+                await asyncio.sleep(15)
